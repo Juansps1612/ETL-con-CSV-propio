@@ -1,39 +1,37 @@
 # main.py
 
+# main.py
 from Config.config import Config
 from Extract.extractor import Extractor
 from Transform.transformer import Transformer
 from Load.loader import Loader
-
-
+from sqlalchemy import create_engine
 
 def main():
     print("🔹 Iniciando proceso ETL...")
 
-    # 1. Extraer datos
-    print("📥 Extrayendo datos...")
+    # 1️⃣ Extraer
     extractor = Extractor(Config.INPUT_PATH)
     df = extractor.extract()
-
     if df is None:
-        print("❌ No se pudieron extraer los datos. Finalizando proceso.")
+        print("❌ Falló la extracción. Finalizando.")
         return
 
-    # 2. Transformar datos
-    print("🔧 Transformando datos...")
+    # 2️⃣ Transformar
     transformer = Transformer(df)
     df_clean = transformer.clean()
 
-    # 3. Cargar datos limpios
-    print("💾 Guardando datos limpios...")
-    # Genera el nuevo nombre del archivo con sufijo "_clean"
-    output_file = Config.OUTPUT_PATH.replace(".csv", "_clean.csv")
+    # 3️⃣ Cargar
     loader = Loader(df_clean)
-    loader.to_csv(output_file)
 
-    print("✅ Proceso ETL finalizado con éxito.")
-    print(f"📂 Archivo limpio disponible en: {output_file}")
+    # a) Guardar CSV
+    loader.to_csv(Config.OUTPUT_PATH)
 
+    # b) Guardar en SQL
+    engine = create_engine(Config.DB_URL)
+    loader.to_sql(engine, table_name="world_cup_players", if_exists='replace')
+
+    print("✅ ETL finalizado con éxito.")
 
 if __name__ == "__main__":
     main()
